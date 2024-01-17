@@ -2,15 +2,19 @@
 
 If you find this repository helpful, please consider giving us a star⭐!
 
+We only train on small-scale datasets (such as TikTok, UBC), and it is difficult to achieve official results under the condition of insufficient data scale and quality. Because of the consideration of time and cost, we do not intend to collect and filter a large number of high-quality data. If someone has a robust model trained on a large amount of high-quality data and is willing to share it, make a pull request.
+
 ## Overview
 This repository contains an simple and unofficial implementation of [Animate Anyone](https://humanaigc.github.io/animate-anyone/). This project is built upon [magic-animate](https://github.com/magic-research/magic-animate/tree/main) and [AnimateDiff](https://github.com/guoyww/AnimateDiff). This implementation is first developed by [Qin Guo](https://github.com/guoqincode) and then assisted by [Zhenzhi Wang](https://zhenzhiwang.github.io/).
 
-## News 🤗🤗🤗
-The first training phase basic test passed, currently in training and testing the second phase.
+## Training Guidance
+Although we cannot use large-scale data to train the model, we can provide several training suggestions:
+1. In our experiments, the poseguider in the original paper of AnimateAnyone is very difficult to control pose, no matter what activation function we use (such as ReLU, SiLU), but the output channel is enlarged to 320 and added after conv_in (such as model.hack_poseguider ) is very effective, and at the same time, compared to controlnet, this solution is more lightweight (<1M para vs 400M para). But we still think that Controlnet is a good choice. Poseguider relies on unet that is fine-tuned at the same time and cannot be used immediately. Plug and play.
+2. In small-scale data sets (less than 2000 videos), stage1 can work very well (including generalization), but stage2 is data hungry. When the amount of data is low, artifacts and flickers can easily occur. Because we retrained unet in the first stage, the checkpoint of the original animatediff lost its effect, so a large number of high-quality data sets are needed to retrain the motion module of animatediff at this stage.
+3. Freezing unet is not a good choice as it will lose the texture information of the reference image.
+4. This is a data hungry task. We believe that scale up data quality and scale are often more valuable than modifying the tiny structure of the model. Data quantity and quality are very important!
+5. High-resolution training is very important, which affects the learning and reconstruction of details. The training resolution should not be greater than the inference resolution.
 
-~~Training may be slow due to GPU shortage.😢~~
-
-It only takes a few days to release the weights.😄
 
 ## Sample of Result on UBC-fashion dataset
 ### Stage 1
@@ -33,16 +37,10 @@ The training of stage2 is challenging due to artifacts in the background. We sel
 </table>
 <p style="margin-left: 2em; margin-top: -1em"></p>
 
-
-## Note !!!
-This project is under continuous development in part-time, there may be bugs in the code, welcome to correct them, I will optimize the code after the pre-trained model is released!
-
-In the current version, we recommend training on 8 or 16 A100,H100 (80G) at 512 or 768 resolution. **Low resolution (256,384) does not give good results!!!(VAE is very poor at reconstruction at low resolution.)**
-
 ## ToDo
 - [x] **Release Training Code.**
 - [x] **Release Inference Code.** 
-- [ ] **Release Unofficial Pre-trained Weights. <font color="red">(Note:Train on public datasets instead of large-scale private datasets, just for academic research.🤗)</font>**
+- [ ] **Release Unofficial Pre-trained Weights.**
 - [x] **Release Gradio Demo.**
 
 ## Requirements
@@ -55,7 +53,7 @@ bash fast_env.sh
 ```python
 python3 -m demo.gradio_animate
 ```
-For resolution 256, 11G VRAM is required, and for resolution 512, 20G VRAM is required.
+For a 13-second pose video, processing at 256 resolution requires 11G VRAM, and at 512 resolution, it requires 23.5G VRAM.
 
 ## Training
 ### Original AnimateAnyone Architecture (It is difficult to control pose when training on a small dataset.)
@@ -85,3 +83,7 @@ torchrun --nnodes=8 --nproc_per_node=8 train_hack.py --config configs/training/t
 
 ## Acknowledgements
 Special thanks to the original authors of the [Animate Anyone](https://humanaigc.github.io/animate-anyone/) project and the contributors to the [magic-animate](https://github.com/magic-research/magic-animate/tree/main) and [AnimateDiff](https://github.com/guoyww/AnimateDiff) repository for their open research and foundational work that inspired this unofficial implementation.
+
+## Email
+
+For academic or business cooperation only: guoqin@stu.pku.edu.cn
